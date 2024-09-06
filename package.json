@@ -66,6 +66,7 @@
     "@types/three": "0.125.2",
     "@typescript-eslint/eslint-plugin": "^5.43.0",
     "@typescript-eslint/parser": "^5.43.0",
+    "angular-cli-ghpages": "^2.0.1",
     "eslint": "^8.54.0",
     "eslint-config-google": "^0.14.0",
     "eslint-plugin-angular": "^4.1.0",
