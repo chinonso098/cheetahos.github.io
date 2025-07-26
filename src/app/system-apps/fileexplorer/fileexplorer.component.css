@@ -9,21 +9,6 @@
     background-color: #202020;
 }
 
-.fileexp-footer-container{
-    width: 100%;
-    height: 24px ;
-    display: inline-flex;
-    /* background-color: #383434; */ 
-    background-color: #303438;
-}
-
-.span-footer{
-    color: white;
-    font-size: 11px;
-    font-weight: normal;
-    margin: 5px 4px;
-}
-
 /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Header Tabs View Started@@@@@@@@@@@@@@@@@@@@@@@@@@*/
 /* Styles for the tabbed window container */
 .fileexp-header-tab-container {
@@ -81,14 +66,16 @@
 
 .figure-header-toggle{
     position: fixed;
-    right: 2%;
+    height: 25px;
+    width: 15px;
+    right: 4%;
 }
 
 .figure-header-tab{
     position: relative;
-    width: 15px;
-    height: 21.5px;
-    place-items:center;
+    height: 10px; 
+    width: 10px;
+    top: 6px
 }
 
 .img-header-tab{
@@ -96,6 +83,26 @@
     height: 10px; 
     width: 10px;
 }
+
+.question-header-cntnr{
+    position: fixed;
+    height: 25px;
+    width: 15px;
+    right: 1%;
+}
+
+.question-figure-header-tab{
+    position: relative;
+    height: 15px; 
+    width: 15px;
+    top: 5px;
+}
+
+.question-img-header-tab{
+    height: 15px; 
+    width: 15px;
+}
+
   
 /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@Header Tabs View Ended@@@@@@@@@@@@@@@@@@@@@@@@@@*/
 
@@ -569,7 +576,7 @@ span.head-nav-path-cntnr2:hover{
 
 .path-input{
     position: relative;
-    width: 350px; /*this was min-width before*/
+    width: 440px; /*this was min-width before*/
     width: 100%;
     height: 24px;
     border: 0.5px solid #9d9d9d;
@@ -745,7 +752,6 @@ span.mid-search-entry{
      
 }
 
-
 /*----------------------------Header navigation search box End------------------------*/
 
 /*****************************Header navigation view Ended*****************************/
@@ -753,10 +759,10 @@ span.mid-search-entry{
 /*****************************navigation pane view Started*****************************/
 
 .navigation-content-container{
-    min-width: 160px;
+    min-width: 180px;
     background-color: #191919;
     overflow-y: auto;
-    height: 350px;
+    height: 440px;
 }
 
 
@@ -764,10 +770,10 @@ span.mid-search-entry{
 
 .file-content-container{
     border-left: 0.5px solid #5a5a5a;
-    min-width: 100px;
+    min-width: 720px; /*This was 100px before, change it when you've got window resize working properly*/
     width: 100%; /* Set a maximum width for the responsive container */
     overflow-y: auto;
-    height: 350px;
+    height: 440px;
 }
 
 .previewOrdetails-content-container{
@@ -781,311 +787,680 @@ span.mid-search-entry{
 /*****************************icon view and layout Started*****************************/
 
 /*-------------------------Icon Size View Start -------------------------------*/
-.ol-icon-size-view{
+.ol-iconview-grid{
     /* column-gap: 1px; */
     display: grid;
     grid-auto-flow: row;
-    grid-template-columns:  repeat(auto-fill,90px);
-    grid-template-rows: repeat(auto-fill,70px);
-    height: calc(100% - 40px);
+    grid-template-columns:  repeat(auto-fill, 90px);
+    grid-template-rows: repeat(auto-fill, 70px);
+    height: calc(100% - 5px);
     width: 100%;
-    padding: 5px 0 ;
-    row-gap: 20px;
+    padding: 5px 10px;
+    row-gap: 34px;
+    column-gap: 5px;
+}
+
+/* Optional: Add headers for folders and files */
+.li-iconview-container::before {
+    content: attr(data-type);
+    font-weight: bold;
+    display: block;
+    margin-bottom: 4px;
+    color: #aaa;
+}
+
+/* Optional spacing between folder and file groups */
+#olElmnt-[yourProcessIdHere] {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 90px);
+    gap: 10px 5px;
+    padding: 5px 10px;
 }
 
 
-.li-icon-size-view{
+.li-iconview-container{
     display: flex;
     justify-content: center;
-    padding: 2px;
+    /* padding: 2px; */
     height: min-content;
     z-index: 1;
 }
 
-
-.figure-icon-size-view{
-    display: flex;
-    flex-direction: column;
-    margin-bottom: -2px;
-    place-items:center;
+.iconview-image {
+    position: relative;
+    height: 45px;
+    width: 45px;
+    bottom: 0;
 }
 
+.iconview-img-wrapper {
+    width: fit-content;
+    display: block;
+    max-width: 96px;
+    max-height: 96px;
+}
 
-.figcaption-icon-size-view{
+.iconview-shortcut-wrapper{
+    display: block;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 22px; /* Adjust size as needed */
+    height: 22px;
+}
+
+.iconview-button {
+    background-color: transparent;
+    border: 0.5px solid transparent;
+    width: 90px;
+    height: min-content;
+    transition: transform 0.1s ease-in-out;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: sans-serif;
+}
+
+.iconview-shortcut-img{
+    position: relative;
+    height: 12px; 
+    width: 12px;
+    bottom: -8px;
+}
+
+.iconview-img-container {
+    margin-bottom: -2px;
+    place-items: center;
+    display: inline-block;
+    position: relative;
+}
+
+.iconview-caption-container {
+    position: relative;
+    height: min-content;
+    /* bottom: -4px; */
+}
+
+.iconview-caption {
     -webkit-box-orient: vertical;
-    color: white;
     display: -webkit-box;
+    color: #fff;
     font-size: 12px;
     letter-spacing: 0.1px;
-    
-    -webkit-line-clamp:2;
+    -webkit-line-clamp:4;
     position: relative;
+    text-align:center;
     padding: 2px 0;
-    top: -1px;
-    line-height: 13px;
+    top: 2px;
+    line-height: normal;
     overflow: hidden;
-    word-break: break-all;
-}
-
-.img-icon-size-view{
-    height: 45px; 
-    width: 45px;
-}
-
-.button-icon-size-view{
-    background-color: transparent;
-    width: 90px;
-    height: 70px; 
-}
-
-/*-------------------------Icon Size View Start -------------------------------*/
-
-/*-------------------------List View Start-------------------------------*/
-
-.ol-list-view{
-    display: grid;
-    grid-auto-flow: column !important;
-    grid-template-columns:  repeat(auto-fill,250px) !important;
-    grid-template-rows: repeat(auto-fill,20px) !important;
-    height: calc(100% - 40px);
     width: 100%;
-    padding: 5px 0;
-    row-gap: 20px !important;
-    column-gap: 2px !important;
+    max-width: 90px;
 }
 
-.li-list-view{
-    display: flex;
-    justify-content: left;
+.iconview-rename-form, .iconview-rename-textbox{
+    position: relative;
+    display: none;
+    margin: 0;
+}
+
+.iconview-rename-textbox{
+    position: relative;
+    display: none;
+    text-align:center;
+    top: 2px;
+    font-size: 12px;
+    font-weight:200;
+    margin-bottom: 1px;
+    width: 90px;
+    height: 20px;
+    border: 0.5px solid #ccc;
+    overflow:hidden;
+    resize: none;
+ }
+
+/*-------------------------Icon Size View End -------------------------------*/
+
+
+/*-------------------------Details Icon View Start ----------------------------------*/
+
+.ol-detailsview-grid{
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding:0px 4px !important;
+}
+
+.li-detailsview-container{
     padding: 2px;
-    padding-left:15px;
-    height: min-content;
+    height: fit-content;
     z-index: 1;
 }
 
-.span-list-view{
-    display: flex;
+/* src/app/app.component.css */
+.detailsview-data-table {
+  width: 100%;
+  border-collapse: collapse; /* Collapses the borders between cells */
+  /* margin-top: 20px; */
 }
 
-.figure-list-view{
+.detailsview-data-table th {
+    border: 0.5px solid #202020; /* Adds a border to each header and data cell */
+    padding: 8px;
+    width: 155px;
+    text-align: left; /* Aligns text to the left */
+    font-weight: bold; /* Make header text bold */
+}
+
+.detailsview-data-table th:first-child{
+    width: 200px;
+}
+
+.detailsview-data-table thead th {
+  background: #202020;
+  position: sticky;
+  top: -1px;
+  z-index: 1;
+}
+
+.detailsview-data-table td {
+    border: 0.5px solid transparent; 
+    height: 25px;
+    width: 155px;
+    text-align: left; /* Aligns text to the left */
+}
+
+.detailsview-data-table td:first-child {
+    display: flex;
+    border: 0.5px solid transparent; 
+    height: 25px;
+    width: 200px;
+    text-align: left; /* Aligns text to the left */
+    margin: 0px 1px;
+}
+
+
+.detailsview-data-table tr.active td {
+  background-color:#d0ecfc !important;
+}
+
+/* Add this to your component's CSS or global styles */
+th[fxplrColumnResize], td[fxplrColumnResize] {
+  position: relative;
+}
+
+th[fxplrColumnResize]::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1px; /* Adjust the handle width */
+  height: 100%;
+  cursor: col-resize;
+  background-color: #f0f0f0; /* Handle background color */
+}
+
+.div-detailsview-figure-section{
+    position: relative;
+    width: 13.5%;
+    height: 25px;
+    /* padding-right: 2px; */
+}
+
+.div-detailsview-caption-section{
+    position: relative;
+    width: 87.5%;
+    height: 25px;
+}
+
+.figure-detailsview{
     display: flex;
     position: relative;
+    height: 20px; 
+    width: 20px;
     place-items:center;
 }
 
-.img-list-view{
-    height: 18px; 
-    width: 18px;
+.img-detailsview{
+    height: 20px; 
+    width: 20px;
     margin: 0 1px;
 }
 
-.figcaption-list-view{
+.figcaption-listview{
     display: flex;
     position: relative;
     width: 100%;
     align-items: center;
+}
+
+.figcaption-detailsview-p, .detailsview-ptag, .detailsview-ptag-right{
+    position: relative;
+    text-align: left;
+    color: white;
+    font-size: 12px;
+    font-weight:200;
+    top: 0px;
+    width: 120px;
+    white-space: nowrap; /* Prevent text from wrapping */
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Add "..." when text overflows */
+    line-height: 13px; 
+}
+
+.figcaption-detailsview-p{
+    top: 4px;
+}
+
+.detailsview-ptag{
+    padding-left: 5px;
+}
+
+.detailsview-ptag-right{
+    text-align: right;
+}
+
+.detailsview-rename-form, .detailsview-rename-textbox{
+    position: relative;
+    display: none;
+    margin: 0;
+}
+
+.detailsview-rename-textbox{
+    position: relative;
+    display: none;
+    top: 0px;
+    margin-bottom: 2px;
+    width: 100%;
+    /* max-width: 228px; */
+    height: 22px;
+    border: 1px solid #ccc;
+    overflow:hidden;
+    font-size: 12px;
+    font-weight:200;
+    background-color: white;
+    color: black;
+ }
+/*-------------------------Details Icon View End ----------------------------------*/
+
+
+/*-------------------------List View Start-------------------------------*/
+
+.ol-listview-grid{
+    display: grid;
+    grid-auto-flow: column !important;
+    grid-template-columns:  repeat(auto-fill, 250px) !important;
+    grid-template-rows: repeat(auto-fill, 25px) !important;
+    height: calc(100% - 5px);
+    width: 100%;
+    padding-right: 2px;
+    padding-left: 4px !important;
+    row-gap: 1px !important;
+    column-gap: 6px !important;
+}
+
+.li-listview-container{
+    display: flex;
+    justify-content: left;
+    padding-left:15px;
+    height: fit-content;
+    z-index: 1;
+}
+
+.div-listview{
+    display: flex;
+    margin: 0px 2px;
+    height: 25px;
+    width: 100%;
+}
+
+.div-listview-figure-section{
+    position: relative;
+    width: 7.5%;
+}
+
+.div-listview-caption-section{
+    position: relative;
+    width: 90%;
+}
+
+.figure-listview{
+    display: flex;
+    position: relative;
+    height: 20px; 
+    width: 20px;
+    place-items:center;
+}
+
+.img-listview{
+    height: 20px; 
+    width: 20px;
+    margin: 0 1px;
+}
+
+.figcaption-listview{
+    display: flex;
+    position: relative;
+    width: 100%;
+    align-items: center;
+}
+
+.figcaption-listview-p{
+    position: relative;
     text-align: left;
     color: white;
     padding-left:4px;
     font-size: 12px;
-    font-weight:300;
+    font-weight:200;
     margin: 0 1px;
-    top: -1px;
+    top: 4px;
     line-height: 13px;
-    
+    width: 100%;
+    max-width: 228px;
+    white-space: nowrap; /* Prevent text from wrapping */
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Add "..." when text overflows */
 }
 
-.button-list-view{
-    max-width: 250px;
-    height: 20px; 
+.button-listview{
+    width: 100%;
+    height: 24px; 
+    padding: 0.5px 0px;
+    border: 0.5px solid transparent;
 }
+
+.listview-rename-form, .listview-rename-textbox{
+    position: relative;
+    display: none;
+    margin: 0;
+}
+
+.listview-rename-textbox{
+    position: relative;
+    display: none;
+    top: 0px;
+    margin-bottom: 2px;
+    width: 100%;
+    max-width: 228px;
+    height: 22px;
+    border: 1px solid #ccc;
+    overflow:hidden;
+    font-size: 12px;
+    font-weight:200;
+    background-color: white;
+    color: black;
+ }
 
 /*-------------------------List View End-------------------------------*/
 
 
 /*-------------------------Tiles View Start-------------------------------*/
 
-.ol-tiles-view{
+.ol-tilesview-grid{
     display: grid;
     grid-auto-flow: column !important;
     grid-template-columns:  repeat(auto-fill,250px) !important;
     grid-template-rows: repeat(auto-fill,50px) !important;
-    height: calc(100% - 40px);
+    height: calc(100% - 5px);
     width: 100%;
-    padding: 2px 0;
-    row-gap: 0px !important;
-    column-gap: 10px !important;
+    padding: 2px 2px;
+    row-gap: 4px !important;
+    column-gap: 6px !important;
 }
 
-.li-tiles-view{
+.li-tilesview-container{
     display: flex;
     justify-content: left;
-    padding: 2px;
     padding-left:15px;
-    height: min-content;
+    height: fit-content;
     z-index: 1;
 }
 
-
-.span-tiles-view{
+.div-tilesview{
     display: flex;
+    margin: 0px 2px;
+    height: 50px;
 }
 
-.figure-tiles-view{
-    display: flex;
-    position: relative;
-    /* width: 45px; */
+.figure-tilesview{
+    height: 48px; 
+    width: 48px;
     place-items:center;
 }
 
-.img-tiles-view{
-    height: 45px; 
-    width: 45px;
+.img-tilesview{
+    height: 48px; 
+    width: 48px;
     margin: 0 1px;
 }
 
-.figcaption-tiles-view{
-    display: flex;
+.div-figcaption-tilesview-container{
+    display: block;
+    width: 200px;
+    height: 48px;
+}
+
+.div-figcaption-tilesview{
+   display: block;
+    height: 16px;
+   width: 100%;
+}
+
+.figcaption-tilesview-p{
     position: relative;
-    width: 100%;
-    align-items: center;
     text-align: left;
     color: white;
     font-size: 12px;
-    font-weight:300;
-    margin: 0 1px;
-    padding-left: 3px;
-    top: -8px;
-    line-height: 13px;
-    
+    font-weight:200;
+    top: 2px;
+    width: 200px;
+    white-space: nowrap; /* Prevent text from wrapping */
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Add "..." when text overflows */
+    line-height: 13px; 
 }
 
-.figcaption-title-view-cntnr{
-    /* margin-top: 0px; */
-    width: 100%;
-    height: 45px;
-    padding-left: 3px;
-    /* border: 1px solid #2d2d2d; */
-}
-
-.div-figcaption-tiles-view-cntnr{
+.tilesview-rename-form, .tilesview-rename-textbox{
     position: relative;
-    left: -1%;
+    display: none;
+    margin: 0;
 }
 
-.div-figcaption-tiles-view{
-    align-items: center;
-    text-align: left;
-    color: white;
+.tilesview-rename-textbox{
+    display: none;
+    width: 100%;
+    max-width: 200px;
+    height: 16px;
+    border: 1px solid #ccc;
+    overflow:hidden;
     font-size: 12px;
-    font-weight:300;
-    margin: 0 1px;
-    line-height: 13px;
-    padding: 1px 0;
-}
+    font-weight:200;
+    background-color: white;
+    color: black;
+ }
 
-.button-tiles-view{
+.button-tilesview{
     width: 250px;
-    height: 45px; 
+    height: 50px; 
+    padding: 0.5px 0px;
+    border: 0.5px solid transparent;
 }
 /*-------------------------Tiles View End-------------------------------*/
 
 /*-------------------------Content View Start-------------------------------*/
 
-.ol-content-view{
+.ol-contentview-grid{
     display: grid;
-    height: calc(100% - 40px);
+    height: calc(100% - 5px);
     width: 100%;
     padding: 0px !important;
-    row-gap: 0px !important;
+    row-gap: 6px !important;
     column-gap: 0px !important;
     grid-auto-flow: row !important;
 }
 
-.li-content-view{
+.li-contentview-container{
     display: flex;
     justify-content: left;
-    padding: 2px 2px;
+    padding: 0px 2px;
     padding-left:15px;
-    height: min-content;
+    height: fit-content;
     z-index: 1;
 }
 
-.span-content-view{
+.div-contentview{
     position: relative;
     display: flex;
-    padding: 2px 2px;
-    height: 43px;
+    margin: 2px 2px;
+    height: 48px;
 }
-.div-content-view{
+
+.div-contentview-info{
     display: flex;
     width: 100%;
     height: 40px;
 }
 
-.figure-content-view{
+.figure-contentview{
     display: flex;
     position: relative;
     /* min-width: 8px; */
     place-items:center;
-    height: 43px;
+    height: 40px;
+    width: 40px;
+    margin-top: 1px;
 }
 
-.img-content-view{
-    height: 39px; 
-    width: 39px;
+.img-contentview{
+    position: relative;
+    height: 40px; 
+    width: 40px;
     margin: 0 1px;
 }
 
-.figcaption-content-view{
-    display: flex;
-    position: relative;
+.figcaption-contentview{
+    display: block;
     width: 70%;
+}
+
+.figcaption-contentview-p{
+    position: relative;
     align-items: center;
     text-align: left;
     color: white;
     font-size: 12px;
     font-weight:300;
     margin: 0 1px;
-    top: -10px;
-    line-height: 13px;
-    
+    top: 4px;
+    height: 20px;
+    width: 320px;
+    white-space: nowrap; /* Prevent text from wrapping */
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Add "..." when text overflows */
+    line-height: 13px; 
 }
 
-.div-extra-info-cntnr{
+.div-contentview-metadata{
+    display: block;
     position: relative;
     width: 30%;
     right: 20%;
-    top:4px;
 }
 
-.div-extra-info-content{
+.contentview-metadata-p{
     position: relative;
     width: 220px;
     text-align: left;
     color: white;
     font-size: 11px;
     font-weight:200;
-    text-overflow: clip;
+    text-overflow: ellipsis;
     padding: 1px 0;
+    top:4px;
 }
 
-.button-content-view{
+.button-contentview{
     width: 100%;
-    height: 43px;
+    height: 47px;
+    padding: 0.5px 0px;
+    border: 0.5px solid transparent;
 }
 
 .line-container {
-    height: 0.5px;
+    position: relative;
+    height: 0.25px;
     background-color: #202020;
+    top: -5px;
 }
 
 .line {
     border: 0.2px solid white;
 }
+
+.contentview-rename-form, .contentview-rename-textbox{
+    position: relative;
+    display: none;
+    margin: 0;
+}
+
+.contentview-rename-textbox{
+    display: none;
+    width: 100%;
+    max-width: 320px;
+    height: 20px;
+    border: 1px solid #ccc;
+    overflow:hidden;
+    font-size: 12px;
+    font-weight:200;
+    background-color: white;
+    color: black;
+ }
 /*-------------------------Content View End-------------------------------*/
 
 /*****************************icon view and layout Started*****************************/
+
+
+/*-----################################---Footer View Started-----################################---*/
+
+.fileexp-footer-container{
+    width: 100%;
+    height: 24px ;
+    display: inline-flex;
+    /* background-color: #383434; */ 
+    background-color: #303438;
+}
+
+.span-footer{
+    color: white;
+    font-size: 11px;
+    font-weight: normal;
+    margin: 5px 4px;
+}
+
+
+.fileexp-footer-img-cntnr-1{
+    position: fixed;
+    height: 24px;
+    right: 4%;
+}
+.fileexp-footer-img-cntnr-2{
+    position: fixed;
+    height: 24px;
+    right: 1%;
+}
+
+.fileexp-footer-figure{
+    position: relative;
+    width: 15px;
+    height: 15px;
+    top: 5.5px;
+}
+
+.fileexp-footer-img{
+    height: 15px; 
+    width: 15px;
+}
+/*-----################################---Footer View Ended-----################################---*/
 
 
 
@@ -1153,28 +1528,46 @@ input::selection{
     transform: rotate(180deg);
 }
 
-.fx-information-tip-container{
-    display: none;
+.fx-information-tip-container {
     position: absolute;
-    z-index: 2;
+    z-index: 0;
     width: fit-content;
     border: 1px solid #5a5a5a;
     background-color: #202020;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease-in-out;
+    pointer-events: none; /* makes it non-interactive */
 }
 
-.fx-information-tip-item-container{
-    z-index: 2;
+.fx-information-tip-container.visible {
+    opacity: 1;
+    z-index: 3;
+    visibility: visible;
+}
+
+.fx-information-tip-item-container {
     width: 100%;
     height: 100%;
 }
 
-.fx-information-tip-item{
-    z-index: 2;
+.fx-information-tip-item {
     padding: 2px 2px;
-    height: fit-content;
-    width: fit-content;
     font-size: 11px;
-    font-weight: normal;
-    text-align: center;
+    text-align: left;
     color: white;
 }
+
+
+.fileexplr-clone-container{
+    width: fit-content;
+    height: fit-content;
+    z-index:  3;
+    position: absolute;
+}
+
+.fileexplr-multi-select-highlight {
+    background-color: #4c4c4c;
+    border: 0.5px solid #3c3c3c;
+}
+

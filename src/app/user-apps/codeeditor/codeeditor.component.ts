@@ -1,38 +1,48 @@
-import { Component, ElementRef, ViewChild, OnDestroy, AfterViewInit, OnInit } from '@angular/core';
+/* eslint-disable @angular-eslint/prefer-standalone */
+import { Component, ElementRef, ViewChild, OnDestroy, AfterViewInit, OnInit, Input } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { ProcessIDService } from 'src/app/shared/system-service/process.id.service';
 import { RunningProcessService } from 'src/app/shared/system-service/running.process.service';
-import { StateManagmentService } from 'src/app/shared/system-service/state.management.service';
-import { TriggerProcessService } from 'src/app/shared/system-service/trigger.process.service';
+import { ProcessHandlerService } from 'src/app/shared/system-service/process.handler.service';
+import { WindowService } from 'src/app/shared/system-service/window.service';
+import { SessionManagmentService } from 'src/app/shared/system-service/session.management.service';
 
-import { BaseComponent } from 'src/app/system-base/base/base.component';
-import { ComponentType } from 'src/app/system-files/component.types';
+import { BaseComponent } from 'src/app/system-base/base/base.component.interface';
+import { ComponentType } from 'src/app/system-files/system.types';
 import { Process } from 'src/app/system-files/process';
 
 import * as htmlToImage from 'html-to-image';
 import { TaskBarPreviewImage } from 'src/app/system-apps/taskbarpreview/taskbar.preview';
 import { Constants } from "src/app/system-files/constants";
+import { AppState } from 'src/app/system-files/state/state.interface';
+
 // import { DiffEditorModel } from 'ngx-monaco-editor-v2';
 
 
 @Component({
   selector: 'cos-codeeditor',
   templateUrl: './codeeditor.component.html',
-  styleUrl: './codeeditor.component.css'
+  styleUrl: './codeeditor.component.css',
+  standalone:false,
 })
 export class CodeEditorComponent  implements BaseComponent,  OnDestroy, AfterViewInit, OnInit {
 
   @ViewChild('monacoContent', {static: true}) monacoContent!: ElementRef;
-
+  @Input() priorUId = Constants.EMPTY_STRING;
+  
   private _processIdService:ProcessIDService;
   private _runningProcessService:RunningProcessService;
-  private _stateManagmentService:StateManagmentService;
-  private _triggerProcessService:TriggerProcessService;
-  private _consts:Constants = new Constants();
+
+  private _processHandlerService:ProcessHandlerService;
+  private _windowService:WindowService;
+  private _sessionManagmentService:SessionManagmentService
+
 
   private _maximizeWindowSub!: Subscription;
   SECONDS_DELAY = 250;
 
+  private _appState!:AppState;
+    
   editorOptions = {
     language: 'javascript', // java, javascript, python, csharp, html, markdown, ruby
     theme: 'vs-dark', // vs, vs-dark, hc-black
@@ -42,34 +52,39 @@ export class CodeEditorComponent  implements BaseComponent,  OnDestroy, AfterVie
 
 
   hasWindow = true;
-  icon = `${this._consts.IMAGE_BASE_PATH}vs_code.png`;
+  icon = `${Constants.IMAGE_BASE_PATH}vs_code.png`;
+  isMaximizable = false;
   name = 'codeeditor';
   processId = 0;
   type = ComponentType.User;
-  displayName = '';
+  displayName = Constants.EMPTY_STRING;
 
-  constructor( processIdService:ProcessIDService, runningProcessService:RunningProcessService, triggerProcessService:TriggerProcessService,
-                stateManagmentService:StateManagmentService){
+  constructor( processIdService:ProcessIDService, runningProcessService:RunningProcessService, triggerProcessService:ProcessHandlerService,
+               sessionManagmentService:SessionManagmentService ,windowService:WindowService){
     this._processIdService = processIdService
     this.processId = this._processIdService.getNewProcessId()
     this._runningProcessService = runningProcessService;
-    this._stateManagmentService = stateManagmentService;
-    this._triggerProcessService = triggerProcessService;
+    this._sessionManagmentService = sessionManagmentService;
+    this._processHandlerService = triggerProcessService;
+    this._windowService = windowService;
 
 
     this._runningProcessService.addProcess(this.getComponentDetail());
   }
 
   ngOnInit(): void {
-    1
+    this.retrievePastSessionData();
   }
 
   ngAfterViewInit(): void {
-    this.setCodeEditorWindowToFocus(this.processId); 
+    1
+    //this.setCodeEditorWindowToFocus(this.processId); 
 
     // setTimeout(()=>{
     //   this.captureComponentImg();
     // },this.SECONDS_DELAY) 
+
+    //this.storeAppState();
   }
 
   ngOnDestroy():void{
@@ -78,13 +93,15 @@ export class CodeEditorComponent  implements BaseComponent,  OnDestroy, AfterVie
 
   captureComponentImg():void{
     htmlToImage.toPng(this.monacoContent.nativeElement).then(htmlImg =>{
-      //console.log('img data:',htmlImg);
-
       const cmpntImg:TaskBarPreviewImage = {
         pid: this.processId,
+        appName: this.name,
+        displayName: this.name,
+        icon : this.icon,
+        defaultIcon: this.icon,
         imageData: htmlImg
       }
-      this._runningProcessService.addProcessImage(this.name, cmpntImg);
+      this._windowService.addProcessPreviewImage(this.name, cmpntImg);
     })
   }
 
@@ -105,6 +122,25 @@ export class CodeEditorComponent  implements BaseComponent,  OnDestroy, AfterVie
     }
   }
 
+  storeAppState(app_data:unknown):void{
+    const uid = `${this.name}-${this.processId}`;
+    this._appState = {
+      pid: this.processId,
+      app_data: app_data,
+      app_name: this.name,
+      unique_id: uid,
+      window: {app_name:'', pid:0, x_axis:0, y_axis:0, height:0, width:0, z_index:0, is_visible:true}
+    }
+    this._sessionManagmentService.addAppSession(uid, this._appState);
+  }
+
+  retrievePastSessionData():void{
+    const appSessionData = this._sessionManagmentService.getAppSession(this.priorUId);
+    if(appSessionData !== null && appSessionData.app_data != Constants.EMPTY_STRING){
+        this.code =  appSessionData.app_data as string;
+    }
+  }
+
   getCode():string{
     // return (
     //   '<html><!-- // !!! Tokens can be inspected using F1 > Developer: Inspect Tokens !!! -->\n<head>\n	<!-- HTML comment -->\n	<style type="text/css">\n		/* CSS comment */\n	</style>\n	<script type="javascript">\n		// JavaScript comment\n	</' +
@@ -116,11 +152,11 @@ export class CodeEditorComponent  implements BaseComponent,  OnDestroy, AfterVie
 
 
   setCodeEditorWindowToFocus(pid:number):void{
-    this._runningProcessService.focusOnCurrentProcessNotify.next(pid);
+    this._windowService.focusOnCurrentProcessWindowNotify.next(pid);
   }
 
   private getComponentDetail():Process{
-    return new Process(this.processId, this.name, this.icon, this.hasWindow, this.type, this._triggerProcessService.getLastProcessTrigger)
+    return new Process(this.processId, this.name, this.icon, this.hasWindow, this.type, this._processHandlerService.getLastProcessTrigger)
   }
 
 }

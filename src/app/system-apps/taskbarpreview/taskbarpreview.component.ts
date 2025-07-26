@@ -1,11 +1,15 @@
-import { Component, Input, OnChanges, SimpleChanges, AfterViewInit } from '@angular/core';
-import { RunningProcessService } from 'src/app/shared/system-service/running.process.service';
+import { Component, Input, OnInit, AfterViewInit} from '@angular/core';
 import { TaskBarPreviewImage } from './taskbar.preview';
 import { trigger, state, style, animate, transition } from '@angular/animations'
+import { WindowService } from 'src/app/shared/system-service/window.service';
+import { SystemNotificationService } from 'src/app/shared/system-service/system.notification.service';
+
 @Component({
   selector: 'cos-taskbarpreview',
   templateUrl: './taskbarpreview.component.html',
   styleUrl: './taskbarpreview.component.css',
+  // eslint-disable-next-line @angular-eslint/prefer-standalone
+  standalone:false,
   animations: [
     trigger('fadeAnimation', [
       state('in', style({ opacity: 1 })),
@@ -19,74 +23,53 @@ import { trigger, state, style, animate, transition } from '@angular/animations'
     ])
   ]
 })
-export class TaskBarPreviewComponent implements OnChanges, AfterViewInit {
-
-  private _runningProcessService:RunningProcessService;
+export class TaskBarPreviewComponent implements OnInit, AfterViewInit {
+  private _systemNotificationService:SystemNotificationService
+  private _windowServices:WindowService;
 
   @Input() name = '';
   @Input() icon = '';
   @Input() fadeState = '';
 
-  componentImages!:TaskBarPreviewImage[];
-  appInfo = '';
-  SECONDS_DELAY = 250;
+  componentImages:TaskBarPreviewImage[] = [];
 
-  constructor(runningProcessService:RunningProcessService){
-    this._runningProcessService = runningProcessService
+  constructor(windowServices:WindowService, systemNotificationService:SystemNotificationService){
+    this._windowServices = windowServices;
+    this._systemNotificationService = systemNotificationService;
     this.fadeState = 'in';
   }
 
-  ngOnChanges(changes: SimpleChanges):void{
-    1
-    //console.log('PREVIEW onCHANGES:',changes);
-    // console.log('this.name:',this.name);
-    // console.log('this.fadeState:',this.fadeState);
+  ngOnInit():void{
+    this.componentImages = this._windowServices.getProcessPreviewImages(this.name);
   }
 
-  ngAfterViewInit(): void {
+  ngAfterViewInit():void{
+    const delay = 5;
     setTimeout(() => {
-      this.componentImages = this._runningProcessService.getProcessImages(this.name);
-      this.shortAppInfo();
-    }, this.SECONDS_DELAY);
-  }
-
-  shortAppInfo():void{
-    this.appInfo = this.name;
-    const limit = 26;
-    const ellipsis = '...';
-
-    this.appInfo = (this.appInfo.length > limit) ? this.appInfo.substring(0, limit) + ellipsis : this.appInfo;
-  }
-
-  onClosePreviewWindow(pid:number):void{
-    const processToClose = this._runningProcessService.getProcess(pid);
-    this._runningProcessService.closeProcessNotify.next(processToClose);
+      this.checkForUpdatedTaskBarPrevInfo();
+    }, delay);
   }
 
   keepTaskBarPreviewWindow():void{
-    this._runningProcessService.keepProcessPreviewWindowNotify.next();
+    this._windowServices.keepProcessPreviewWindowNotify.next();
   }
 
   hideTaskBarPreviewWindowAndRestoreDesktop():void{
-    this._runningProcessService.hideProcessPreviewWindowNotify.next();
-
-    this._runningProcessService.restoreProcessesWindowNotify.next();
+    this._windowServices.hideProcessPreviewWindowNotify.next();
+    this._windowServices.restoreProcessesWindowNotify.next();
   }
 
-  showTaskBarPreviewContextMenu(evt:MouseEvent, pid:number):void{
-    console.log('I will implement the TaskBarPreview Context Window.........later');
-  }
+  checkForUpdatedTaskBarPrevInfo():void{
+    for(const cmptImage of this.componentImages){
+      const tmpInfo = this._systemNotificationService.getAppIconNotication(cmptImage.pid);
+      if(tmpInfo.length > 0){
+        cmptImage.displayName = tmpInfo[0];
+        cmptImage.icon = tmpInfo[1];
+      }
+    }
 
-  setWindowToFocus(pid:number):void{
-    this._runningProcessService.showOnlyCurrentProcessWindowNotify.next(pid);
+    //For mergedlist, you will have to search by opensWith/ProcessName to get the pids from runnngSystemSerice
+    //A way to differentiate between merged and unMerged is needed ####
+    //HMMMMMMM wait this should work regardless....i'll need to look into this
   }
-
-  restoreWindow(pid:number):void{
-    this._runningProcessService.restoreProcessWindowNotify.next(pid);
-  }
-
-  showWindow(pid:number):void{
-    this._runningProcessService.restoreProcessWindowNotify.next(pid);
-  }
-
 }

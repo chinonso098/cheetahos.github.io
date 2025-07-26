@@ -1,12 +1,110 @@
- <main class="main-desktop" id="vanta"  (contextmenu)="showDesktopContextMenu($event)" (click)="hideContextMenu(name)" #desktopContainer> 
+ <main class="main-desktop" id="vanta"  
+    (contextmenu)="showDesktopContextMenu($event)" 
+    (click)="hideDesktopContextMenuAndOthers(name)"
+    (mousemove)="performTasks($event)"  #desktopContainer> 
 
-    <div [@slideStatusAnimation]="slideState" class="dsktp-screen-preview-container"  *ngIf="showDesktopScreenShotPreview">
-        <img [src]="dsktpPrevImg"/>
-    </div>
+    <ol class="ol-desktopIcon-grid" (dragover)="onDragOver($event)" (drop)="onDrop($event)" 
+        (click)="handleIconHighLightState()"
+        (mousedown)="activateMultiSelect($event)"
+        (mouseup)="deActivateMultiSelect()"
+        (mousemove)="updateDivWithAndSize($event)" id="desktopIcon_ol"> 
+        <li class="li-desktopIcon-container" *ngFor="let file of files; let i = index" id="desktopIcon_li{{i}}">
+            <div role="button" tabindex="0" class="desktopIcon-btn" 
+            (dblclick)="runProcess(file)" 
+            (mouseenter)="onMouseEnter(i)" 
+            (mouseleave)="onMouseLeave(i)"  
+            zIndex="1"  
+            (contextmenu)="onShowDesktopIconCntxtMenu($event, file, i)" 
+            (click)="onBtnClick($event, i)"
+            (dragstart)="onDragStart($event, i)"
+            (dragend)="onDragEnd($event)"
+            id="iconBtn{{i}}"  [style]="btnStyle">
+                <div class="desktopIcon-img-section"  id="desktopIcon_fig{{i}}">
+                    <div class="desktopIcon-img-container">
+                        <img class="desktopIcon-img-content" [src]="file.getIconPath | safeResourceUrl" [alt]="file.getFileName"  [style]="iconSizeStyle"/>
+                    </div>
+                    <div class="desktopIcon-shortcut-img-container" *ngIf="file.getIsShortCut">
+                        <img class="desktopIcon-shortcut-img-content" [src]="shortCutImg"  id="shortCut{{i}}" [style]="shortCutIconSizeStyle"/>
+                    </div>
+                </div>
+                <div class="desktopIcon-label-section">
+                    <p class="desktopIcon-caption"  id="figCap{{i}}" [style]="figCapIconSizeStyle">
+                        {{file.getFileName}}
+                    </p>
+
+                    <form [formGroup]="renameForm" 
+                        id="renameContainer{{i}}"
+                        class="desktopIcon-rename-form" (ngSubmit)="isFormDirty()">
+                        <textarea class="desktopIcon-rename-textbox" 
+                            formControlName="renameInput"  
+                            (keydown)="onInputChange($event)" 
+                            autofocus spellcheck="false" 
+                            id="renameTxtBox{{i}}">
+                        </textarea>
+                    </form>
+                </div>                
+            </div>
+        </li>
+
+        <ng-container  *ngIf="showDesktopIconCntxtMenu">
+            <cos-menu [generalMenu]="menuData" [style]="iconCntxtMenuStyle" [menuType]="dsktpMngrMenuOption" [menuOrder]="menuOrder"> </cos-menu>
+        </ng-container>
+
+        <ng-container *ngIf="showDesktopCntxtMenu">
+            <cos-menu [nestedMenu]="deskTopMenu"  [style]="dskTopCntxtMenuStyle" [menuType]="deskTopMenuOption"> </cos-menu>
+        </ng-container>
+
+        <ng-container *ngIf="showTskBarPreviewWindow" >
+            <cos-taskbarpreview  [fadeState]="tskBarPreviewWindowState" [name]="appToPreview" [icon]="appToPreviewIcon"  [style]="tskBarPrevWindowStyle">  </cos-taskbarpreview>
+        </ng-container>
+
+        <ng-container  *ngIf="showTskBarAppIconMenu" >
+            <cos-menu [generalMenu]="taskBarAppIconMenuData" [style]="tskBarAppIconMenuStyle" [menuType]="tskBarAppIconMenuOption"> </cos-menu>
+        </ng-container>
+
+        <ng-container  *ngIf="showTskBarCntxtMenu">
+            <cos-menu [generalMenu]="taskBarContextMenuData"  [style]="tskBarCntxtMenuStyle" [menuType]="tskBarContextMenuOption"> </cos-menu>
+        </ng-container>
+
+        @if(showVolumeControl){
+            <cos-volumecontrol></cos-volumecontrol>
+        }
+        
+        @if(showDesktopScreenShotPreview){
+            <div [@slideStatusAnimation]="slideState" class="dsktp-screen-preview-container" >
+                <img [src]="dsktpPrevImg"/>
+            </div>
+        }
+
+        @if(showTaskBarIconToolTip){
+            <div class="tskbar-tooltip-container" [style]="tskBarToolTipStyle" >
+                <p class="tskbar-tooltip-txt"> {{tskBarToolTipText}}</p>
+            </div>
+        }
     
-    <cos-menu [nestedMenu]="deskTopMenu" *ngIf="showDesktopCntxtMenu" [style]="dskTopCntxtMenuStyle" [menuType]="deskTopMenuOption"> </cos-menu>
-    <cos-taskbarpreview  [fadeState]="tskBarPreviewWindowState" [name]="appToPreview" [icon]="appToPreviewIcon" *ngIf="showTskBarPreviewWindow"  [ngStyle]="tskBarPrevWindowStyle">  </cos-taskbarpreview>
-    <cos-menu [generalMenu]="taskBarMenuData" *ngIf="showTskBarCntxtMenu" [style]="tskBarCntxtMenuStyle" [menuType]="tskBarMenuOption" [menuOrder]="menuOrder"> </cos-menu>
-    <cos-startmenu *ngIf="showStartMenu"></cos-startmenu>
-    <ng-content> </ng-content>
+        <div #selectPaneContainer id="dskTopMultiSelectPane"></div>
+
+        <div class="tool-tip-container" id="invalidChars">
+            <div class="tool-tip-arrow"> </div>
+            <div class="tool-tip-base"> A file name can't contain any of the following characters: <br /><br />
+                \ / : * ? " < > |' 
+            </div>
+        </div>
+
+        <div  class="desktopIcon-clone-container"  id="desktopIcon_clone_cntnr"> </div>
+
+        <ng-content> </ng-content>
+
+        <cos-taskbar> 
+            <cos-startbutton></cos-startbutton>
+            <cos-search></cos-search>
+            <cos-taskbarentries> </cos-taskbarentries>
+            <cos-systemtray></cos-systemtray>
+        </cos-taskbar>
+
+        @if(showStartMenu){
+            <!-- <cos-startmenu [@slideStartMenuAnimation]></cos-startmenu> -->
+            <cos-startmenu ></cos-startmenu>
+        }
+    </ol>
 </main>

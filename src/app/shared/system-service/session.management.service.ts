@@ -1,37 +1,58 @@
 import {Injectable } from "@angular/core";
+import { Constants } from "src/app/system-files/constants";
+import { Process } from "src/app/system-files/process";
+import { ProcessType } from "src/app/system-files/system.types";
+import { ProcessIDService } from "./process.id.service";
+import { RunningProcessService } from "./running.process.service";
+import { Service } from "src/app/system-files/service";
+import { BaseService } from "./base.service.interface";
+import { AppState } from "src/app/system-files/state/state.interface";
 
 @Injectable({
     providedIn: 'root'
 })
 
-export class SessionManagmentService{
+export class SessionManagmentService implements BaseService{
 
     private _sessionName = "main-session";
-    public readonly _pickUpKey = "temp-session-retrieval-key";
     private _sessionDataDict: Map<string, unknown>; 
-    static instance: SessionManagmentService;
-    private _sessionRetrievalCounter = 0;
 
-    constructor(){
-        if(sessionStorage.getItem(this._sessionName)){
-            const sessData = sessionStorage.getItem(this._sessionName) as string;
+    private _runningProcessService:RunningProcessService;
+    private _processIdService:ProcessIDService;
+  
+    name = 'session_mgmt_svc';
+    icon = `${Constants.IMAGE_BASE_PATH}svc.png`;
+    processId = 0;
+    type = ProcessType.Background;
+    status  = Constants.SERVICES_STATE_RUNNING;
+    hasWindow = false;
+    description = 'handles load/save of user session';
+        
+    constructor(processIDService:ProcessIDService, runningProcessService:RunningProcessService){
+        if(localStorage.getItem(this._sessionName)){
+            const sessData = localStorage.getItem(this._sessionName) as string;
             this._sessionDataDict = new Map(JSON.parse(sessData));
-            SessionManagmentService.instance = this;
         }
         else{
             this._sessionDataDict = new  Map<string, unknown>();
-            SessionManagmentService.instance = this;
         }
+
+        this._processIdService = processIDService;
+        this._runningProcessService = runningProcessService;
+  
+        this.processId = this._processIdService.getNewProcessId();
+        this._runningProcessService.addProcess(this.getProcessDetail());
+        this._runningProcessService.addService(this.getServiceDetail());
     }
 
     addSession(key:string, dataToAdd:unknown): void{
+        this._sessionDataDict.set(key, dataToAdd)
+        this.saveSession(this._sessionDataDict);
+    }
 
-        if(key === this._pickUpKey){
-            this.addTempSession(dataToAdd);
-        }else{
-            this._sessionDataDict.set(key,dataToAdd)
-            this.saveSession(this._sessionDataDict);
-        }
+    addAppSession(key:string, dataToAdd:AppState): void{
+        const data =  JSON.stringify(dataToAdd);
+        localStorage.setItem(key, data);
     }
 
     getSession(key:string):unknown{
@@ -39,35 +60,13 @@ export class SessionManagmentService{
         return stateData;
     }
 
-    getTempSession(key:string):string{
-        let result= '';
-        if(this._sessionRetrievalCounter <= 1){
-            // console.log(`counter:${this._sessionRetrievalCounter} -----  retrievedSess:${this._sessionRetrievalCounter}`);
-
-            result = sessionStorage.getItem(key) || '';
-            if(this._sessionRetrievalCounter === 1){
-                sessionStorage.removeItem(key);
-                this._sessionRetrievalCounter = 0;
-                return  result;
-            }
-            this._sessionRetrievalCounter++;
-            return  result;
+    getAppSession(key:string):AppState | null{
+        const appDataStr = localStorage.getItem(key);
+        if(appDataStr){
+            const appData = JSON.parse(appDataStr) as AppState;
+            return appData;
         }
-        return result;
-    }
-       
-
-    getKeys():string[]{
-        const keys:string[] = [];
-
-        for(const key of this._sessionDataDict.keys()){
-            keys.push(key)
-        }
-        return keys;
-    }
-
-    hasTempSession(key:string):boolean{
-        return (sessionStorage.getItem(key) !==null) ? true : false;
+        return null;
     }
 
     removeSession(key:string): void{
@@ -75,17 +74,61 @@ export class SessionManagmentService{
         this.saveSession(this._sessionDataDict);
     }
 
-    resetSession(): void{
+    removeAppSession(key:string): void{
+        localStorage.removeItem(key);
+    }
+
+    clearSession(): void{
         this._sessionDataDict = new Map<string, unknown>;
-        sessionStorage.clear()
+        localStorage.clear()
+    }
+
+    clearAppSession(): void{
+        const userOpenedAppsKey = Constants.USER_OPENED_APPS;
+        const appsInstanceUIDKey = Constants.USER_OPENED_APPS_INSTANCE;
+        this.removeSession(userOpenedAppsKey);
+        this.removeSession(appsInstanceUIDKey);
+
+        const processWithWindows = this._runningProcessService.getProcesses().filter(x => x.getHasWindow === true);
+        for(const proccess of processWithWindows){
+            const uid = `${proccess.getProcessName}-${proccess.getProcessId}`;
+            this.removeAppSession(uid);
+        }
     }
 
     private saveSession(sessionData:Map<string, unknown>){
         const data =  JSON.stringify(Array.from(sessionData.entries()));
-        sessionStorage.setItem(this._sessionName, data);
+        localStorage.setItem(this._sessionName, data);
     }
 
-    private addTempSession(sessionData:unknown){
-        sessionStorage.setItem(this._pickUpKey, sessionData as string);
+    addFileServiceSession(key: string, map: Map<string, string>): void {
+        const serialized = JSON.stringify(Array.from(map.entries()));
+        localStorage.setItem(key, serialized);
+    }
+
+    getFileServiceSession(key: string): Map<string, string> | null {
+        const item = localStorage.getItem(key);
+        if (!item) return null;
+
+        try {
+            const parsed: [string, string][] = JSON.parse(item);
+            return new Map(parsed);
+        } catch {
+            return null;
+        }
+    }
+
+    deleteFileServiceSession(): void {
+        const fileServiceDeleteKey = Constants.FILE_SVC_RESTORE_KEY;
+        localStorage.removeItem(fileServiceDeleteKey);
+    }
+
+
+    private getProcessDetail():Process{
+        return new Process(this.processId, this.name, this.icon, this.hasWindow, this.type)
+    }
+
+    private getServiceDetail():Service{
+        return new Service(this.processId, this.name, this.icon, this.type, this.description, this.status)
     }
 }

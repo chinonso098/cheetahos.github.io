@@ -1,6 +1,6 @@
-<cos-window [runningProcessID]="this.processId" [processAppIcon]="this.icon" [processAppName]="this.name" (click)="setTerminalWindowToFocus(this.processId)">
-    <div class="terminal-container" tabIndex="-1" (keydown)="onKeyDownOnWindow($event)" (click)="focusOnInput()" #terminalCntnr>
-        <div class="terminal-output-section" #terminalOutputCntnr>
+<cos-window [runningProcessID]="this.processId" [processAppIcon]="this.icon" [processAppName]="this.name"  [isMaximizable]="this.isMaximizable" [priorUId]="this.priorUId" (click)="setTerminalWindowToFocus(this.processId)">
+    <div class="terminal-container" tabIndex="-1" (keydown)="onKeyDownOnWindow($event)" (drop)="onDrop($event)" (click)="focusOnInput($event)" #terminalCntnr>
+        <div class="terminal-output-section"  #terminalOutputCntnr>
             <ng-container  *ngIf="isBannerVisible">
                 <div class="terminal-banner-container" >
                     <div class="terminal-banner-content">
@@ -40,7 +40,6 @@
                                 <div class="prev-terminal-output terminal-warning">{{cmdHistory.getCommandOutput.trim()}}</div>
                             </div>
                         </ng-container>
-
                     </div>
                 </ng-container>
             </div>
@@ -55,11 +54,12 @@
                     formControlName="terminalCmd"
                     (keydown)="onKeyDownInInputBox($event)"
                     (keyDblPressed)="onKeyDoublePressed($event)" 
+                    (click)="focusOnInput($event)"
                     autofocus ="false" 
                     spellcheck="false"
                     autocomplete="off"
                     autocapitalize="off"
-                    id="cmdTxtBox"
+                    id="cmdTxtBox-{{this.processId}}"
                     />
                 </form>
             </div>

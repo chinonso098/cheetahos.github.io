@@ -1,21 +1,22 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { BaseComponent } from 'src/app/system-base/base/base.component';
-import { ComponentType } from 'src/app/system-files/component.types';
+/* eslint-disable @angular-eslint/prefer-standalone */
+import { AfterViewInit, Component, ElementRef, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { BaseComponent } from 'src/app/system-base/base/base.component.interface';
+import { ComponentType } from 'src/app/system-files/system.types';
 import {extname} from 'path';
 import { ProcessIDService } from 'src/app/shared/system-service/process.id.service';
 import { Process } from 'src/app/system-files/process';
 import { RunningProcessService } from 'src/app/shared/system-service/running.process.service';
-import { TriggerProcessService } from 'src/app/shared/system-service/trigger.process.service';
+import { ProcessHandlerService } from 'src/app/shared/system-service/process.handler.service';
 import { FileInfo } from 'src/app/system-files/file.info';
 import { Constants } from "src/app/system-files/constants";
-import { StateManagmentService } from 'src/app/shared/system-service/state.management.service';
-import { AppState, BaseState } from 'src/app/system-files/state/state.interface';
-import { StateType } from 'src/app/system-files/state/state.type';
+import { AppState } from 'src/app/system-files/state/state.interface';
 import { SessionManagmentService } from 'src/app/shared/system-service/session.management.service';
 import { Subscription } from 'rxjs';
 import { ScriptService } from 'src/app/shared/system-service/script.services';
 import * as htmlToImage from 'html-to-image';
 import { TaskBarPreviewImage } from '../taskbarpreview/taskbar.preview';
+import { WindowService } from 'src/app/shared/system-service/window.service';
+import { AudioService } from 'src/app/shared/system-service/audio.services';
 
 // eslint-disable-next-line no-var
 declare const Howl:any;
@@ -25,7 +26,8 @@ declare const SiriWave:any;
 @Component({
   selector: 'cos-audioplayer',
   templateUrl: './audioplayer.component.html',
-  styleUrls: ['./audioplayer.component.css']
+  styleUrls: ['./audioplayer.component.css'],
+  standalone:false,
 })
 export class AudioPlayerComponent implements BaseComponent, OnInit, OnDestroy, AfterViewInit  {
 
@@ -46,21 +48,25 @@ export class AudioPlayerComponent implements BaseComponent, OnInit, OnDestroy, A
   @ViewChild('barEmpty', {static: true}) barEmpty!: ElementRef;
   @ViewChild('sliderBtn', {static: true}) sliderBtn!: ElementRef;
 
+  @Input() priorUId = Constants.EMPTY_STRING;
+
   private _maximizeWindowSub!: Subscription;
   private _minimizeWindowSub!: Subscription;
+  private _changeContentSub!: Subscription;
   
   private _processIdService:ProcessIDService;
   private _runningProcessService:RunningProcessService;
-  private _triggerProcessService:TriggerProcessService;
-  private _stateManagmentService:StateManagmentService;
+  private _processHandlerService:ProcessHandlerService;
   private _sessionManagmentService: SessionManagmentService;
   private _scriptService: ScriptService;
+  private _windowService:WindowService;
+  private _audioService:AudioService;
+
   private _fileInfo!:FileInfo;
-  private _consts:Constants = new Constants();
   private _appState!:AppState;
 
   SECONDS_DELAY = 250;
-  private audioSrc = '';
+  private audioSrc = Constants.EMPTY_STRING;
   private audioPlayer: any;
   private siriWave: any;
   private isSliderDown = false;
@@ -70,8 +76,8 @@ export class AudioPlayerComponent implements BaseComponent, OnInit, OnDestroy, A
 
   name= 'audioplayer';
   hasWindow = true;
-  
-  icon = `${this._consts.IMAGE_BASE_PATH}audioplayer.png`;
+  isMaximizable=false;
+  icon = `${Constants.IMAGE_BASE_PATH}audioplayer.png`;
   processId = 0;
   type = ComponentType.User;
   displayName = 'Howlerjs';
@@ -82,32 +88,34 @@ export class AudioPlayerComponent implements BaseComponent, OnInit, OnDestroy, A
   duration = '0:00' ;
 
  
-  constructor(processIdService:ProcessIDService, runningProcessService:RunningProcessService, triggerProcessService:TriggerProcessService,
-    stateManagmentService: StateManagmentService, sessionManagmentService: SessionManagmentService, scriptService: ScriptService) { 
+  constructor(processIdService:ProcessIDService, runningProcessService:RunningProcessService, triggerProcessService:ProcessHandlerService,
+              sessionManagmentService: SessionManagmentService, scriptService: ScriptService, 
+    windowService:WindowService, audioService:AudioService) { 
     this._processIdService = processIdService;
-    this._triggerProcessService = triggerProcessService;
-    this._stateManagmentService = stateManagmentService;
+    this._processHandlerService = triggerProcessService;
     this._sessionManagmentService= sessionManagmentService;
     this._scriptService = scriptService;
+    this._windowService = windowService;
+    this._audioService = audioService;
+
     this.processId = this._processIdService.getNewProcessId();
-    
-    this.retrievePastSessionData();
 
     this._runningProcessService = runningProcessService;
-    this._maximizeWindowSub = this._runningProcessService.maximizeProcessWindowNotify.subscribe(() =>{this.maximizeWindow()});
-    this._minimizeWindowSub = this._runningProcessService.minimizeProcessWindowNotify.subscribe((p) =>{this.minimizeWindow(p)})
+    this._maximizeWindowSub = this._windowService.maximizeProcessWindowNotify.subscribe(() =>{this.maximizeWindow()});
+    this._minimizeWindowSub = this._windowService.minimizeProcessWindowNotify.subscribe((p) =>{this.minimizeWindow(p)})
+    this._changeContentSub = this._runningProcessService.changeProcessContentNotify.subscribe(() =>{this.changeContent()})
     this._runningProcessService.addProcess(this.getComponentDetail());
   }
 
-
   ngOnInit(): void {
-    this._fileInfo = this._triggerProcessService.getLastProcessTrigger();
+    this.retrievePastSessionData();
+    this._fileInfo = this._processHandlerService.getLastProcessTrigger();
   }
 
   ngAfterViewInit():void{  
 
-    this.setAudioWindowToFocus(this.processId); 
-    this.audioSrc = (this.audioSrc !== '')? 
+    //this.setAudioWindowToFocus(this.processId); 
+    this.audioSrc = (this.audioSrc !== Constants.EMPTY_STRING)? 
       this.audioSrc :this.getAudioSrc(this._fileInfo.getContentPath, this._fileInfo.getCurrentPath);
 
       this._scriptService.loadScript("howler","osdrive/Program-Files/Howler/howler.min.js").then(()=>{
@@ -116,7 +124,7 @@ export class AudioPlayerComponent implements BaseComponent, OnInit, OnDestroy, A
 
           this.siriWave = new SiriWave({
             container: this.waveForm.nativeElement,
-            width: 640,
+            width: 900,
             height: 480,
             autostart: false,
             cover: true,
@@ -127,7 +135,9 @@ export class AudioPlayerComponent implements BaseComponent, OnInit, OnDestroy, A
   
           if(this.playList.length == 0){
             this.loadHowlSingleTrackObjectAsync()
-                .then(howl => { this.audioPlayer = howl; })
+                .then(howl => { this.audioPlayer = howl; 
+                  this._audioService.addExternalAudioSrc(this.name, howl);
+                })
                 .catch(error => { console.error('Error loading track:', error); });
       
             this.storeAppState(this.audioSrc);
@@ -146,21 +156,64 @@ export class AudioPlayerComponent implements BaseComponent, OnInit, OnDestroy, A
     // }
   }
 
+  ngOnDestroy():void{
+    this.audioPlayer?.unload();
+    this._audioService.removeExternalAudioSrc(this.name);
+    this._maximizeWindowSub?.unsubscribe();
+    this._minimizeWindowSub?.unsubscribe(); 
+    this._changeContentSub?.unsubscribe(); 
+  }
+
   captureComponentImg():void{
     htmlToImage.toPng(this.audioContainer.nativeElement).then(htmlImg =>{
 
       const cmpntImg:TaskBarPreviewImage = {
         pid: this.processId,
+        appName: this.name,
+        displayName: this.name,
+        icon : this.icon,
+        defaultIcon: this.icon,
         imageData: htmlImg
       }
-      this._runningProcessService.addProcessImage(this.name, cmpntImg);
+      this._windowService.addProcessPreviewImage(this.name, cmpntImg);
     })
   }
 
-  ngOnDestroy():void{
-    this.audioPlayer?.unload();
-    this._maximizeWindowSub?.unsubscribe();
-    this._minimizeWindowSub?.unsubscribe(); 
+  changeContent():void{
+    const uid = `${this.name}-${this.processId}`;
+    const delay = 1000;
+
+    console.log('previous audio source:',  this.audioSrc);
+    this.audioSrc = Constants.EMPTY_STRING;
+    console.log('previous audio source-1:',  this.audioSrc);
+    if(this._runningProcessService.getEventOrginator() === uid){
+      this._fileInfo = this._processHandlerService.getLastProcessTrigger();
+
+      this.audioSrc = (this.audioSrc !== Constants.EMPTY_STRING)? 
+      this.audioSrc :this.getAudioSrc(this._fileInfo.getContentPath, this._fileInfo.getCurrentPath);
+
+      this.siriWave.stop();
+      this.audioPlayer.stop();
+
+      // got purge the old howl instance :()
+      this.audioPlayer?.unload();
+      this._audioService.removeExternalAudioSrc(this.name);
+
+      console.log('new audio source:',  this.audioSrc);
+
+      setTimeout(async()=> {
+        this.loadHowlSingleTrackObjectAsync()
+          .then(howl => { this.audioPlayer = howl; 
+            this._audioService.addExternalAudioSrc(this.name, howl);
+            this.onPlayBtnClicked();
+          })
+          .catch(error => { console.error('Error loading track:', error); });
+
+        this.storeAppState(this.audioSrc);
+      }, delay);
+
+      this._runningProcessService.removeEventOriginator();
+    }
   }
 
   showMenu(): void{
@@ -273,7 +326,6 @@ export class AudioPlayerComponent implements BaseComponent, OnInit, OnDestroy, A
     this.isSliderDown = false;
   }
 
-
   onVolumeMouseMove(evt:MouseEvent):void{
     if(this.isSliderDown){
       const rect =  this.audioContainer.nativeElement.getBoundingClientRect();
@@ -287,7 +339,6 @@ export class AudioPlayerComponent implements BaseComponent, OnInit, OnDestroy, A
     }
   }
 
-
   formatTime(seconds:number):string{
     const mins = Math.floor(seconds / 60) || 0;
     const secs = Math.floor(seconds - (mins * 60)) || 0;
@@ -300,7 +351,7 @@ export class AudioPlayerComponent implements BaseComponent, OnInit, OnDestroy, A
   }
 
   setAudioWindowToFocus(pid:number):void{
-    this._runningProcessService.focusOnCurrentProcessNotify.next(pid);
+    this._windowService.focusOnCurrentProcessWindowNotify.next(pid);
   }
 
   resizeSiriWave():void{
@@ -341,7 +392,6 @@ export class AudioPlayerComponent implements BaseComponent, OnInit, OnDestroy, A
     }
   }
 
-
   async loadHowlSingleTrackObjectAsync(): Promise<any> {
 
     // Your asynchronous code here
@@ -349,7 +399,7 @@ export class AudioPlayerComponent implements BaseComponent, OnInit, OnDestroy, A
       const ext = this.getExt(this._fileInfo.getContentPath, this._fileInfo.getCurrentPath);
       const audioPlayer = new Howl({
         src:[this.audioSrc],
-        format: [ext.replace('.','')],
+        format: [ext.replace(Constants.DOT, Constants.EMPTY_STRING)],
         autoplay: false,
         loop: false,
         volume: 0.5,
@@ -449,11 +499,11 @@ export class AudioPlayerComponent implements BaseComponent, OnInit, OnDestroy, A
 
 
   getAudioSrc(pathOne:string, pathTwo:string):string{
-    let audioSrc = '';
+    let audioSrc = Constants.EMPTY_STRING;
     if(pathOne.includes('blob:http')){
       return pathOne;
     }else if(this.checkForExt(pathOne,pathTwo)){
-      audioSrc = '/' + this._fileInfo.getContentPath;
+      audioSrc = Constants.ROOT + this._fileInfo.getContentPath;
     }else{
       audioSrc = this._fileInfo.getCurrentPath;
     }
@@ -465,9 +515,9 @@ export class AudioPlayerComponent implements BaseComponent, OnInit, OnDestroy, A
     const currentPathExt = extname(currentPath);
     let res = false;
 
-    if(this._consts.AUDIO_FILE_EXTENSIONS.includes(contentExt)){
+    if(Constants.AUDIO_FILE_EXTENSIONS.includes(contentExt)){
       res = true;
-    }else if(this._consts.AUDIO_FILE_EXTENSIONS.includes(currentPathExt)){
+    }else if(Constants.AUDIO_FILE_EXTENSIONS.includes(currentPathExt)){
       res = false;
     }
     return res;
@@ -476,11 +526,11 @@ export class AudioPlayerComponent implements BaseComponent, OnInit, OnDestroy, A
   getExt(contentPath:string, currentPath:string):string{
     const contentExt = extname(contentPath);
     const currentPathExt = extname(currentPath);
-    let res = '';
+    let res = Constants.EMPTY_STRING;
 
-    if(this._consts.AUDIO_FILE_EXTENSIONS.includes(contentExt)){
+    if(Constants.AUDIO_FILE_EXTENSIONS.includes(contentExt)){
       res = contentExt;
-    }else if(this._consts.AUDIO_FILE_EXTENSIONS.includes(currentPathExt)){
+    }else if(Constants.AUDIO_FILE_EXTENSIONS.includes(currentPathExt)){
       res = currentPathExt;
     }
 
@@ -493,30 +543,21 @@ export class AudioPlayerComponent implements BaseComponent, OnInit, OnDestroy, A
       pid: this.processId,
       app_data: app_data,
       app_name: this.name,
-      unique_id: uid
+      unique_id: uid,
+      window: {app_name:'', pid:0, x_axis:0, y_axis:0, height:0, width:0, z_index:0, is_visible:true}
     }
-
-    this._stateManagmentService.addState(uid, this._appState, StateType.App);
+    this._sessionManagmentService.addAppSession(uid, this._appState);
   }
 
   retrievePastSessionData():void{
-    const pickUpKey = this._sessionManagmentService._pickUpKey;
-    if(this._sessionManagmentService.hasTempSession(pickUpKey)){
-      const tmpSessKey = this._sessionManagmentService.getTempSession(pickUpKey) || ''; 
-      const retrievedSessionData = this._sessionManagmentService.getSession(tmpSessKey) as BaseState[];
-
-      if(retrievedSessionData !== undefined){
-        const appSessionData = retrievedSessionData[0] as AppState;
-  
-        if(appSessionData !== undefined  && appSessionData.app_data != ''){
-          this.audioSrc = appSessionData.app_data as string;
-        }
-      }
+    const appSessionData = this._sessionManagmentService.getAppSession(this.priorUId);
+    if(appSessionData !== null &&  appSessionData.app_data != Constants.EMPTY_STRING){
+      this.audioSrc = appSessionData.app_data as string;
     }
   }
 
   private getComponentDetail():Process{
-    return new Process(this.processId, this.name, this.icon, this.hasWindow, this.type, this._triggerProcessService.getLastProcessTrigger)
+    return new Process(this.processId, this.name, this.icon, this.hasWindow, this.type, this._processHandlerService.getLastProcessTrigger)
   }
 
 }

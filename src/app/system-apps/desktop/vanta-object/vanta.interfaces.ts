@@ -1,7 +1,7 @@
 
 export interface HALO{
     el: string,
-    mouseControls?: true,
+    mouseControls?: false,
     touchControls?: true,
     gyroControls?: false,
     minHeight?: 200.00,
@@ -38,23 +38,23 @@ export interface BIRDS{
 
 export interface WAVE{
     el: string,
-    mouseControls?: true,
+    mouseControls?: false,
     touchControls?: true,
     gyroControls?: false,
     minHeight?: 200.00,
     minWidth?: 200.00,
-    scale?: 1.00,
+    scale?: 1.20,
     scaleMobile?: 1.00,
-    color?:0x5588,
-    shininess?:30,
-    waveHeight?:15,
-    waveSpeed?:1,
-    zoom?:1  
+    color?:0x274c,
+    shininess?:45,
+    waveHeight?:30,
+    waveSpeed?:0.20,
+    zoom?:1.3  
 }
 
 export interface RINGS{
     el: string,
-    mouseControls?: true,
+    mouseControls?: false,
     touchControls?: true,
     gyroControls?: false,
     minHeight?: 200.00,

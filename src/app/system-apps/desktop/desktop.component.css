@@ -14,17 +14,215 @@
 .dsktp-screen-preview-container{
     z-index: 2;
     position: absolute;
-    width: 200px;
-    height: 120px;
-    right: 2px;
-    bottom: 41px;
+    width: 480px;
+    height: 270px;
+    right: 0;
+    bottom: 0;
 }
 
 .dsktp-screen-preview-container img{
     height: 100%;
     width: 100%;
+    object-fit: contain;
 }
 
-.dsktp-screen-preview-container img{
-    object-fit: contain;
+.ol-desktopIcon-grid{
+    /* column-gap: 1px; */
+    position: relative;
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns:  repeat(auto-fill,90px);
+    grid-template-rows: repeat(auto-fill,70px);
+    height: calc(100% - 40px);
+    width: 100%;
+    padding: 5px 0;
+    row-gap: 25px;
+    z-index: 1;
+}
+
+.li-desktopIcon-container{
+    display: flex;
+    justify-content: center;
+    /* padding: 2px; */
+    height: min-content;
+}
+
+.desktopIcon-btn{
+    position: relative;
+    /* display: flex; */
+    background-color: transparent;
+    border: 1px solid transparent;
+    width: 90px;
+    height: fit-content;
+    transition: transform 0.1s ease-in-out; 
+    /* flex-direction: column; */
+    place-items: center;
+    /* align-items: center; */
+    font-family: sans-serif;
+}
+
+.desktopIcon-img-section {
+    margin-bottom: -2px; 
+    place-items:center;
+    display: block;
+    margin: 0 auto;
+    position: relative;
+}
+
+.desktopIcon-img-container{
+    width: fit-content;
+    display: block;
+    max-width: 80px;
+    max-height: 80px;
+}
+
+.desktopIcon-img-content{
+    position: relative;
+    height: 45px; 
+    width: 45px;
+    bottom: 0;
+}
+
+.desktopIcon-shortcut-img-container{
+    display: block;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 22px; /* Adjust size as needed */
+    height: 22px;
+}
+
+.desktopIcon-shortcut-img-content{
+    position: relative;
+    height: 12px; 
+    width: 12px;
+    bottom: -8px;
+}
+
+.desktopIcon-label-section{
+    position: relative;
+    height: min-content
+}
+
+.desktopIcon-caption{
+    -webkit-box-orient: vertical;
+    display: -webkit-box;
+    color: #fff;
+    font-size: 12px;
+    letter-spacing: 0.1px;
+    -webkit-line-clamp:2;
+    position: relative;
+    text-align:center;
+    padding: 2px 0;
+    text-shadow:0 0 1px rgba(0, 0, 0, 75%),
+                0 0 2px rgba(0, 0, 0, 50%),
+                0 0 3px rgba(0, 0, 0, 25%),
+
+                0 1px 1px rgba(0, 0, 0, 75%),
+                0 1px 2px rgba(0, 0, 0, 50%),
+                0 1px 3px rgba(0, 0, 0, 25%),
+                
+                0 2px 1px rgba(0, 0, 0, 75%),
+                0 2px 2px rgba(0, 0, 0, 50%),
+                0 2px 3px rgba(0, 0, 0, 25%);
+
+    line-height: normal;
+    overflow: hidden;
+    width: 90px;
+}
+
+
+.desktopIcon-rename-form, .desktopIcon-rename-textbox{
+    position: relative;
+    display: none;
+    margin: 0;
+}
+
+.desktopIcon-rename-textbox{
+    position: relative;
+    display: none;
+    text-align: center;
+    top: 2px;
+    font-size: 12px;
+    font-weight:200;
+    margin-bottom: 1px;
+    width: 90px;
+    height: 20px;
+    border: 1px solid #ccc;
+    overflow:hidden;
+    resize: none;
+ }
+
+.tool-tip-container{
+    position: absolute;
+    width: fit-content;
+    border-bottom: 1px solid black;
+    box-shadow:0px 1px 0px rgba(0, 0, 0, 0.3);
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    z-index: -1;
+    opacity: 0;
+    transform: translate(-100000px,100000px); 
+}
+
+.tool-tip-base{
+    width: fit-content;
+    height: 40px;
+    line-height: 5px;
+    padding: 10px;
+    font-size: 10px;
+    font-weight: normal;
+    text-align: center;
+    color: black;
+    background: rgb(255, 255, 255);
+    border: 4px solid rgb(255, 255, 255);
+    border-radius: 5px;
+    /* text-shadow: rgba(0, 0, 0, 0.1) 1px 1px 1px;
+    box-shadow: rgba(0, 0, 0, 0.1) 1px 1px 2px 0px; */
+}
+
+.tool-tip-arrow {
+    content: "";
+    position: relative;
+    width: 0;
+    height: 0;
+    border-width: 10px;
+    border-style: solid;
+    border-color: #FFFFFF transparent transparent transparent; 
+    left: 20px;
+    transform: rotate(180deg);
+}
+
+.desktopIcon-clone-container{
+    width: fit-content;
+    height: fit-content;
+    z-index:  3;
+    position: absolute;
+}
+
+.desktopIcon-multi-select-highlight {
+    background-color: rgba(0, 150, 255, 0.3);
+    border: 1px solid hsla(0,0%,50%,25%);
+}
+
+.li-desktop-container, .desktopIcon-btn, .dsktp-figure {
+    margin: 0;
+    padding: 0;
+}
+
+.tskbar-tooltip-container{
+    width: fit-content;
+    height: 16px;
+    background-color: #F5F5DC;
+    /* bottom: 46px; */
+}
+
+.tskbar-tooltip-txt{
+    position: relative;
+    color: #000;
+    font-size: 12px;
+    padding: 1px 2px;
+    font-weight: 200;
+    background-color: #F5F5DC;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }

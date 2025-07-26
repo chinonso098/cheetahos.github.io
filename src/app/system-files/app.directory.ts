@@ -16,12 +16,13 @@ export class AppDirectory {
     }
 
     private fetchSystemApp(): string[]{
-        this._systemProcessList = ["audioplayer","fileexplorer","taskmanager","terminal","videoplayer","photoviewer","texteditor"];
+        this._systemProcessList = ["audioplayer","chatter","cheetah","clippy","fileexplorer",
+            "taskmanager","terminal","videoplayer","photoviewer","runsystem","texteditor"];
         return this._systemProcessList;
     }
 
     private fetchUserApp(): string[]{
-        this._userProcessList = ["hello","greeting", "jsdos","ruffle","codeeditor","markdownviewer"];
+        this._userProcessList = ["hello","greeting", "jsdos", "ruffle", "codeeditor", "markdownviewer", "starfield", "boids", "particleflow"];
         return this._userProcessList;
     }
 

@@ -1,9 +1,9 @@
 import { Component, ElementRef, OnInit, AfterViewInit } from '@angular/core';
-import { animate, keyframes, style, transition, trigger } from '@angular/animations';
+//import { animate, style, transition, trigger } from '@angular/animations';
 
 import { ProcessIDService } from 'src/app/shared/system-service/process.id.service';
 import { RunningProcessService } from 'src/app/shared/system-service/running.process.service';
-import { ComponentType } from 'src/app/system-files/component.types';
+import { ComponentType } from 'src/app/system-files/system.types';
 import { Process } from 'src/app/system-files/process';
 import { Constants } from 'src/app/system-files/constants';
 import { FileInfo } from 'src/app/system-files/file.info';
@@ -11,61 +11,58 @@ import { FileService } from 'src/app/shared/system-service/file.service';
 import { FileEntry } from 'src/app/system-files/file.entry';
 
 import { applyEffect } from "src/osdrive/Cheetah/System/Fluent Effect";
-import { TriggerProcessService } from 'src/app/shared/system-service/trigger.process.service';
+import { ProcessHandlerService } from 'src/app/shared/system-service/process.handler.service';
+import { UserNotificationService } from 'src/app/shared/system-service/user.notification.service';
+import { CommonFunctions } from 'src/app/system-files/common.functions';
+import { MenuService } from 'src/app/shared/system-service/menu.services';
 
 
 @Component({
   selector: 'cos-startmenu',
   templateUrl: './startmenu.component.html',
   styleUrls: ['./startmenu.component.css'],
-  animations: [
-    trigger('slideUpToggle', [
-      transition(':enter', [
-        style({ transform: 'translateY(-100%)'  }), // Start from 100% down
-        animate('0.3s ease-out', style({ transform: 'translateY(0%)' })) // Slide up to its original position
-      ]),
-    ])
-  ]
+  // eslint-disable-next-line @angular-eslint/prefer-standalone
+  standalone:false,
 })
 
 export class StartMenuComponent implements OnInit, AfterViewInit {
   private _processIdService:ProcessIDService;
   private _runningProcessService:RunningProcessService;
-  private _triggerProcessService:TriggerProcessService;
+  private _processHandlerService:ProcessHandlerService;
+  private _userNotificationService:UserNotificationService;
+  private _menuService:MenuService;
   private _fileService:FileService;
-
   private _elRef:ElementRef;
-  private _consts:Constants = new Constants();
+
   txtOverlayMenuStyle:Record<string, unknown> = {};
-
-  private SECONDS_DELAY = 250;
-
-  Documents= 'Documents';
-  Pictures = 'Pictures'
-  Music = 'Music';
-
-
   delayStartMenuOverlayHideTimeoutId!: NodeJS.Timeout;
   delayStartMenuOverlayShowTimeoutId!: NodeJS.Timeout;
 
   startMenuFiles:FileInfo[] = [];
   private _startMenuDirectoryFilesEntries!:FileEntry[];
-  directory ='/AppData/StartMenu';
+  private SECONDS_DELAY = 250;
+  readonly START_MENU_DIRECTORY ='/AppData/StartMenu';
+  readonly Documents= 'Documents';
+  readonly Pictures = 'Pictures'
+  readonly Music = 'Music';
+
 
   hasWindow = false;
-  icon = `${this._consts.IMAGE_BASE_PATH}generic_program.png`;
+  icon = `${Constants.IMAGE_BASE_PATH}generic_program.png`;
   name = 'startmenu';
   processId = 0;
   type = ComponentType.System
   displayName = '';
 
-  constructor( processIdService:ProcessIDService,runningProcessService:RunningProcessService, triggerProcessService:TriggerProcessService,
-              elRef: ElementRef, fileService:FileService) { 
+  constructor( processIdService:ProcessIDService,runningProcessService:RunningProcessService, triggerProcessService:ProcessHandlerService,
+              elRef: ElementRef, fileService:FileService, userNotificationService:UserNotificationService, menuService:MenuService) { 
     this._processIdService = processIdService;
     this._runningProcessService = runningProcessService;
     this._elRef = elRef;
     this._fileService = fileService;
-    this._triggerProcessService = triggerProcessService;
+    this._processHandlerService = triggerProcessService;
+    this._userNotificationService = userNotificationService;
+    this._menuService = menuService;
 
     this.processId = this._processIdService.getNewProcessId()
     if(this._runningProcessService.getProcesses().findIndex(x => x.getProcessName === this.name) === -1){
@@ -78,10 +75,9 @@ export class StartMenuComponent implements OnInit, AfterViewInit {
   }
   
   async ngAfterViewInit():Promise<void>{
-    setTimeout(async () => {
-      await this.loadFilesInfoAsync();
-    }, this.SECONDS_DELAY);
-    // 
+
+    await CommonFunctions.sleep(this.SECONDS_DELAY * 2)
+    await this.loadFilesInfoAsync();
     this.removeVantaJSSideEffect();
   }
 
@@ -93,64 +89,65 @@ export class StartMenuComponent implements OnInit, AfterViewInit {
     setTimeout(()=> {
       const elfRef = this._elRef.nativeElement;
       if(elfRef) {
-        elfRef.style.position = '';
-        elfRef.style.zIndex = '';
+        elfRef.style.position = Constants.EMPTY_STRING;
+        elfRef.style.zIndex = Constants.EMPTY_STRING;
       }
     }, this.SECONDS_DELAY);
   }
 
- 
+  // Store listener for removal
+  private overlaySlideOutListener = () => {
+    const smIconTxtOverlay = document.getElementById('sm-IconText-Overlay-Cntnr') as HTMLElement;
+    if (smIconTxtOverlay) {
+        smIconTxtOverlay.style.boxShadow = '0px 2px 4px rgba(0, 0, 0, 0.6)';
+        this.txtOverlayMenuStyle = { display: 'flex' };
+    }
+  };
 
   // Show Overlay Function
   startMenuOverlaySlideOut(): void {
-
     clearTimeout(this.delayStartMenuOverlayHideTimeoutId);
-    const smIconTxtOverlay = document.getElementById('sm-IconText-Overlay-Cntnr') as HTMLElement;
-    // Clear the show timeout as well if needed
     clearTimeout(this.delayStartMenuOverlayShowTimeoutId);
 
-    // Begin the show process
+    const smIconTxtOverlay = document.getElementById('sm-IconText-Overlay-Cntnr') as HTMLElement;
+    if (!smIconTxtOverlay) return;
+
     this.delayStartMenuOverlayShowTimeoutId = setTimeout(() => {
-      if (smIconTxtOverlay) {
-        // Set initial position and visibility
         smIconTxtOverlay.style.width = '48px';
-        smIconTxtOverlay.style.transition = 'width 0.3s ease'; // Set transition
-        smIconTxtOverlay.style.width = '248px'; // Animate to 248px
+        smIconTxtOverlay.style.transition = 'width 0.3s ease';
+        smIconTxtOverlay.style.width = '248px';
         smIconTxtOverlay.style.transitionDelay = '0.75s';
 
-        // Box-shadow animation after expansion
-        smIconTxtOverlay.addEventListener('transitionend', () => {
-          smIconTxtOverlay.style.boxShadow = '0px 2px 4px rgba(0, 0, 0, 0.6)';
-          this.txtOverlayMenuStyle = { 'display': 'flex' }; // Make visible after slide out
-        }, { once: true });
-      }
-    }, 500); // Delay the start of the animation
+        // Remove any existing listener before adding a new one
+        smIconTxtOverlay.removeEventListener('transitionend', this.overlaySlideOutListener);
+        smIconTxtOverlay.addEventListener('transitionend', this.overlaySlideOutListener, { once: true });
+    }, 500);
   }
+
 
   // Hide Overlay Function
   startMenuOverlaySlideIn(): void {
-
-
     clearTimeout(this.delayStartMenuOverlayShowTimeoutId);
-    const smIconTxtOverlay = document.getElementById('sm-IconText-Overlay-Cntnr') as HTMLElement;
-    // Clear the hide timeout if necessary
     clearTimeout(this.delayStartMenuOverlayHideTimeoutId);
 
-    // Begin the hide process
+    const smIconTxtOverlay = document.getElementById('sm-IconText-Overlay-Cntnr') as HTMLElement;
+    if (!smIconTxtOverlay) return;
+
+    // Ensure we remove any transition listeners to prevent race conditions
+    smIconTxtOverlay.removeEventListener('transitionend', this.overlaySlideOutListener);
+
     this.delayStartMenuOverlayHideTimeoutId = setTimeout(() => {
-      if (smIconTxtOverlay ) {
-        // Start shrinking animation
         smIconTxtOverlay.style.transition = 'width 0.3s ease';
         smIconTxtOverlay.style.width = '48px';
         smIconTxtOverlay.style.boxShadow = 'none';
 
-        // Once transition ends, hide the overlay
-        smIconTxtOverlay.addEventListener('transitionstart', () => {
-          this.txtOverlayMenuStyle = { 'display': 'none' }; // Hide after slide in
+        // Ensure text hides after transition completes
+        smIconTxtOverlay.addEventListener('transitionend', () => {
+            this.txtOverlayMenuStyle = { display: 'none' };
         }, { once: true });
-      }
-    }, 250); // Add a slight delay to match the UX behavior
+    }, 250);
   }
+
 
 
   onBtnHover():void{
@@ -193,43 +190,43 @@ export class StartMenuComponent implements OnInit, AfterViewInit {
     // })
   }
 
-
-
   private async loadFilesInfoAsync():Promise<void>{
     this.startMenuFiles = [];
     this._fileService.resetDirectoryFiles();
-    const directoryEntries  = await this._fileService.getEntriesFromDirectoryAsync(this.directory);
-    this._startMenuDirectoryFilesEntries = this._fileService.getFileEntriesFromDirectory(directoryEntries,this.directory);
-
-    for(let i = 0; i < directoryEntries.length; i++){
-      const fileEntry = this._startMenuDirectoryFilesEntries[i];
-      const fileInfo = await this._fileService.getFileInfoAsync(fileEntry.getPath);
-      this.startMenuFiles.push(fileInfo)
-    }
+    const directoryEntries  = await this._fileService.loadDirectoryFiles(this.START_MENU_DIRECTORY);
+    this.startMenuFiles.push(...directoryEntries)
   }
 
-  runProcess(file:FileInfo):void{
-    console.log('startmanager-runProcess:',file)
-    this._triggerProcessService.startApplication(file);
+  runProcess(file:FileInfo, evt:MouseEvent):void{
+    console.log('startmanager-runProcess:',file);
+
+    this._menuService.hideStartMenu.next();
+  
+    this._processHandlerService.startApplicationProcess(file);
+
+    evt.stopPropagation();
   }
 
 
-  openFolderPath(folderName:string):void{
+  openFolderPath(folderName:string, evt:MouseEvent):void{
    const path = `/Users/${folderName}`;
 
    const file = new FileInfo();
    file.setFileName = folderName;
-   file.setOpensWith = 'fileexplorer';
+   file.setOpensWith = Constants.FILE_EXPLORER;
    file.setIsFile = false;
    file.setCurrentPath = path;
 
-  this.runProcess(file);
+    this.runProcess(file, evt);
   }
 
-  power():void{
-    location.reload();
-  }
+  power(evt:MouseEvent):void{
+    const msg = 'Shut Down Cheetah';
+    this._menuService.hideStartMenu.next();
+    this._userNotificationService.showPowerOnOffNotification(msg);
 
+    evt.stopPropagation();
+  }
 
   private getComponentDetail():Process{
     return new Process(this.processId, this.name, this.icon, this.hasWindow, this.type)

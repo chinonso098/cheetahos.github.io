@@ -1,0 +1,25 @@
+.main-taskbar-search-div{
+    width: 40px;
+    height: 40px;
+    position: absolute;
+    left: 45px;
+}
+
+.taskbar-search-fig{
+    align-items: center;
+    display:inline-flex;
+    width: 32px;
+    padding: 0 1px;
+    position: relative;
+    top: 8.5px;
+    left: 4.5px;
+}
+
+.taskbar-search-img{
+    height: 27px;
+    width: 27px;
+}
+
+.main-taskbar-search-div:hover{
+    background-color: hsla(0,0%,30%,60%);
+}

@@ -18,7 +18,8 @@
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
             "allowedCommonJsDependencies": [
-              "browserfs",
+              "src/osdrive/Cheetah/System/BrowserFS/browserfs",
+              "src/osdrive/Cheetah/System/Fluent Effect",
               "buffer",
               "ini",
               "path",
@@ -31,11 +32,12 @@
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "css",
             "assets": [
+              "src/favicon.ico",
               "src/assets",
               "src/osdrive",
               {
                 "glob": "**/*",
-                "input": "src/osdrive/Program-Files/JS-DOS",
+                "input": "src/osdrive/Program-Files/jsdos",
                 "output": "/"
               },
               {
@@ -57,6 +59,7 @@
               "src/styles.css",
               "src/css/videoplayer/video-js.min.css",
               "src/css/quill/quill.snow.css",
+              "src/osdrive/Program-Files/jsdos/js-dos.css",
               "node_modules/angular2-draggable/css/resizable.min.css"
             ],
             "scripts": [
@@ -140,6 +143,9 @@
               "src/**/*.html"
             ]
           }
+        },
+        "deploy": {
+          "builder": "angular-cli-ghpages:deploy"
         }
       }
     }

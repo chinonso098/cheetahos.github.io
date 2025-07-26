@@ -1,59 +1,60 @@
 import { Injectable } from "@angular/core";
 import { Subject } from "rxjs";
-import { TaskBarPreviewImage } from "src/app/system-apps/taskbarpreview/taskbar.preview";
+import { Constants } from "src/app/system-files/constants";
 import { Process } from "src/app/system-files/process";
+import { Service } from "src/app/system-files/service";
+import { ProcessType } from "src/app/system-files/system.types";
+import { BaseService } from "./base.service.interface";
 
 
 @Injectable({
     providedIn: 'root'
 })
 
-export class RunningProcessService{
-
-    static instance: RunningProcessService;
+export class RunningProcessService implements BaseService{
     private _runningProcesses:Process[];
-    private _runningProcessesImages:Map<string, TaskBarPreviewImage[]>;
+    private _runningServices:Service[];
     private _eventOriginator = '';
 
+    /**
+     * This  notify the app component  to removes process that have window componenets
+     * Calling this on a process without one, will throw an error
+     */
     closeProcessNotify: Subject<Process> = new Subject<Process>();
-    focusOnNextProcessNotify: Subject<void> = new Subject<void>();
-    focusOnCurrentProcessNotify: Subject<number> = new Subject<number>();
-    removeFocusOnOtherProcessesNotify: Subject<number> = new Subject<number>();
-    hideProcessPreviewWindowNotify: Subject<void> = new Subject<void>();
-    hideOtherProcessNotify: Subject<number> = new Subject<number>();
-    keepProcessPreviewWindowNotify: Subject<void> = new Subject<void>();
-    maximizeProcessWindowNotify: Subject<void> = new Subject<void>();
-    minimizeProcessWindowNotify: Subject<number[]> = new Subject<number[]>();
-    showProcessPreviewWindowNotify: Subject<unknown[]> = new Subject<unknown[]>();
-    showOnlyCurrentProcessWindowNotify: Subject<number> = new Subject<number>();
+    newProcessNotify: Subject<string> = new Subject<string>(); 
+    changeProcessContentNotify:Subject<void> = new Subject<void>();
     processListChangeNotify: Subject<void> = new Subject<void>();
-    restoreOrMinimizeProcessWindowNotify: Subject<number> = new Subject<number>();
-    restoreProcessWindowNotify: Subject<number> = new Subject<number>();
-    restoreProcessesWindowNotify: Subject<void> = new Subject<void>();
-    showProcessNotify: Subject<void> = new Subject<void>();
-    hideProcessNotify: Subject<void> = new Subject<void>();
+    
+    name = 'rning_proc_svc';
+    icon = `${Constants.IMAGE_BASE_PATH}svc.png`;
+    /**
+     * A little homage to Windows.
+     * On Windows, the "System" process always has the same PID, 
+     * which is 4; meaning that whenever the System process is running, it will always be associated with Process ID 4
+     */
+    processId = Constants.RESERVED_ID_RUNNING_PROCESS_SERVICE;
+    type = ProcessType.Cheetah;
+    status  = Constants.SERVICES_STATE_RUNNING;
+    hasWindow = false;
+    description = 'manages add/remove of all processes';
+
 
     constructor(){
         this._runningProcesses = [];
-        this._runningProcessesImages = new Map<string, TaskBarPreviewImage[]>();
-        RunningProcessService.instance = this; //I added this to access the service from a class, not component
+        this._runningServices = [];
+
+        this.addProcess(this.getProcessDetail());
+        this.addService(this.getServiceDetail());
     }
 
     addProcess(proccessToAdd:Process):void{
         this._runningProcesses.push(proccessToAdd)
     }
 
-    addProcessImage(appName:string, data:TaskBarPreviewImage):void{
-        if(!this._runningProcessesImages.has(appName)){
-            const tmpArr:TaskBarPreviewImage[] = [data];
-            this._runningProcessesImages.set(appName, tmpArr);
-        }
-        else{
-            const currImages = this._runningProcessesImages.get(appName) || [];
-            currImages.push(data);
-            this._runningProcessesImages.set(appName, currImages);
-        }
+    addService(serviceToAdd:Service):void{
+        this._runningServices.push(serviceToAdd)
     }
+
 
     addEventOriginator(eventOrig:string):void{
         this._eventOriginator = eventOrig;
@@ -61,32 +62,11 @@ export class RunningProcessService{
 
     removeProcess(proccessToRemove:Process):void{
         const deleteCount = 1;
-        const procIndex = this._runningProcesses.findIndex((process) => {
-            return process.getProcessId === proccessToRemove.getProcessId;
-          });
+        const procIndex = this._runningProcesses.findIndex(process => process.getProcessId === proccessToRemove.getProcessId);
 
         if(procIndex != -1){
             this._runningProcesses.splice(procIndex, deleteCount)
         }
-    }
-
-    removeProcessImages(appName:string):void{
-        if(this._runningProcessesImages.has(appName))
-            this._runningProcessesImages.delete(appName);
-    }
-
-    removeProcessImage(appName:string, pid:number):void{
-        const deleteCount = 1;
-        if(this._runningProcessesImages.has(appName)){
-            const currImages = this._runningProcessesImages.get(appName) || [];
-            const dataIndex = currImages.findIndex((d) => {
-                return d.pid  === pid;
-              });
-    
-            if(dataIndex != -1){
-                currImages.splice(dataIndex || 0, deleteCount)
-            }
-        }    
     }
 
     removeEventOriginator():void{
@@ -102,11 +82,21 @@ export class RunningProcessService{
         return process!;
     }
 
-    getProcessImages(appName:string):TaskBarPreviewImage[]{
-        if(this._runningProcessesImages.has(appName))
-           return this._runningProcessesImages.get(appName) || [];
+    /**
+     * 
+     * @param appName 
+     * @returns Process
+     * 
+     * This method will return the first of a given process with matching name, or null
+     * if proccess does not exsist
+     */
+    getProcessByName(appName:string):Process | null{
+        const process = this._runningProcesses.find((process) => {
+            return process.getProcessName === appName;
+        });
 
-        return [];
+     
+        return process || null;
     }
 
     getEventOrginator():string{
@@ -128,7 +118,25 @@ export class RunningProcessService{
         return this._runningProcesses;
     }
 
-    processCount():number{
+    getServices():Service[]{
+        return this._runningServices;
+    }
+
+    getProcessesCount():number{
         return this._runningProcesses.length;
+    }
+
+    getProcessCount(processName:string):number{
+        const processList = this._runningProcesses.filter(process =>  process.getProcessName === processName);
+        return processList.length;
+    }
+
+
+    private getProcessDetail():Process{
+        return new Process(this.processId, this.name, this.icon, this.hasWindow, this.type)
+    }
+
+    private getServiceDetail():Service{
+        return new Service(this.processId, this.name, this.icon, this.type, this.description, this.status)
     }
 }
